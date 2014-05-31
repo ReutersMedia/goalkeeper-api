@@ -1,0 +1,9 @@
+#/bin/sh
+
+# chkconfig: 345 95 20
+
+if [ "`id -u`" != "0" ]; then
+  echo "Must run as root!"
+fi
+
+su -s /bin/bash -l __RUN_USER__ -c "__APP_HOME__/goalkeeper-api.ctl $*"
