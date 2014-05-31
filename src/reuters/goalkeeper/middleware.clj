@@ -3,8 +3,7 @@
             [clojure.string :as str]
             [compojure.response :refer [render]]
             [ring.util.response :refer [response header]]
-            [reuters.goalkeeper.utils :as utils]
-            [reuters.goalkeeper.users-service :as users-service]))
+            [reuters.goalkeeper.utils :as utils]))
 
 (defn log-access [handler]
   (let [access-log-helper (fn [level & args]

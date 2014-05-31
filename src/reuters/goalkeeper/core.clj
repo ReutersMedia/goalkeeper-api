@@ -10,7 +10,6 @@
             [reuters.goalkeeper.conf :as conf]
             [reuters.goalkeeper.middleware :as mw]
             [reuters.goalkeeper.db :as db]
-            [reuters.goalkeeper.users-service :as users-service]
             [reuters.goalkeeper.logback :as logback]))
 
 (def shutting-down? (atom false))
@@ -19,30 +18,35 @@
   ; welcome page 
   (GET "/" [] "Welcome to Reuters Goalkeeper API")
 
-  (GET "/goalkeeper/:id" [id]
-    (when-let [comment (db/get-by-id db/goalkeeper-db id)] 
-       (->> comment
-            vector
-            (db/get-with-replies db/goalkeeper-db true 0 ,,,)
-            first
-            response)))
+  (GET "/goalkeeper/users/:user-id/games" [user-id from to]
+    (let [user-id (Integer/parseInt user-id)
+          from (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") from)
+          to (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") to)]
+    (response (db/get-user-games db/goalkeeper-db user-id from to))))
 
-  (POST "/goalkeeper" [message url tags :as {{user-id :user_id url-title :url_title} :params}]
-    (db/insert db/comments-db { :url url 
-                                :url-title url-title 
-                                :user-id user-id 
-                                :message message
-                                :approved 0 
-                                :tags tags })
-    (response (str "comment: " url ", " message " - was saved.")))
+  (POST "/goalkeeper/users/:user-id/games/:game-id" [user-id game-id prediction]
+    (let [user-id (Integer/parseInt user-id)
+          game-id (Integer/parseInt game-id)]
+      (db/update-user-prediction db/goalkeeper-db user-id game-id prediction)
+      (response (str "user: " user-id " prediction for game: " game-id " - was saved"))))
 
-  (POST "/goalkeeper/:comment-id/approve" [comment-id]
-    (db/approve db/comments-db comment-id)
-    (response (str "comment: " comment-id " was approved.")))
+  (GET "/goalkeeper/users/:user-id" [user-id]
+    (when-let [user (db/get-user-by-id db/goalkeeper-db (Integer/parseInt user-id))] 
+      (response user)))
 
-  (POST "/goalkeeper/:comment-id/delete" [comment-id]
-      (db/soft-delete-comment-and-its-replies db/comments-db comment-id)
-      (response (str "comment: " comment-id " was deleted.")))
+  (POST "/goalkeeper/user/:id" [id first last country player level :as {{ picture-url :picture_url} :params}]
+    (db/insert-or-update-user db/goalkeeper-db { :id (Integer/parseInt id)
+                                                 :first first
+                                                 :last last
+                                                 :picture-url picture-url
+                                                 :country country
+                                                 :player player
+                                                 :level (Integer/parseInt level)})
+    (response (str "user: " id ", " first " " last " - was saved.")))
+
+  (GET "/goalkeeper/users" [date limit]
+    (let [to-date (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") date)]
+      (response (db/get-top-predicters db/goalkeeper-db to-date (Integer/parseInt limit)))))
 
   ; keepalive for nagios check
   (GET "/keepalive" [] (if @shutting-down? nil "alive"))
@@ -64,15 +68,12 @@
         (mw/no-cache)
         (json/wrap-json-response)))
 
-(defn init []
-  (users-service/init))
+(defn init [])
 
 (defn destroy [server]
-  (users-service/destroy)
   (.stop server))
 
 (defn -main [& args]
-  (users-service/init)
   (let [stop-file (io/file conf/app-root "app.stop")
         server (run-jetty #'app { :port (get-in conf/app-conf [:jetty :port])
                                   :max-threads (get-in conf/app-conf [:jetty :threads])
