@@ -30,7 +30,7 @@ resolve_vars() {
     sed 's/"/\\\\"/g' ${template_file} | while IFS='' read line; do eval "echo \"$line\"" ; done > ${target_file}
 }
 
-APP_NAME=comments-api
+APP_NAME=goalkeeper-api
 APP_HOME="$(cd -L "$(dirname $0)/.." && pwd)"
 APP_USER=
 APP_GROUP=

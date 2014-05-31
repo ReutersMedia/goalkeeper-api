@@ -1,5 +1,5 @@
 jetty_threads=100
-comments_db_username=mex
-comments_db_password=mex
-comments_db_subname=10.90.106.251:23306,10.90.106.252:23306/mediaexpress?failOverReadOnly=true
+db_username=mex
+db_password=mex
+db_subname=10.90.106.251:23306,10.90.106.252:23306/goalkeeper?failOverReadOnly=true
 gpdb_ws_domain=http://10.90.106.246:23415

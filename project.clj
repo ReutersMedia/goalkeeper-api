@@ -1,6 +1,6 @@
 (defproject goalkeeper-api "1.0.0"
   :description "Goalkeeper betting app and API`"
-  :main reuters.comments.core
+  :main reuters.goalkeeper.core
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.logging "0.2.6"]
                  [org.slf4j/slf4j-api "1.7.2"]
@@ -18,7 +18,7 @@
   :plugins [[lein-ring "0.8.10"]
             [lein-pprint "1.1.1"]
             [lein-libdir "0.1.1"]]
-  :ring {:handler reuters.comments.core/app 
-         :init reuters.comments.core/init
+  :ring {:handler reuters.goalkeeper.core/app 
+         :init reuters.goalkeeper.core/init
          :port 30000}
   :profiles {:dev {:dependencies [[ring-mock "0.1.3"]]}})

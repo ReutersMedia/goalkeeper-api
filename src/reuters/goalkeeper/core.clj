@@ -19,15 +19,15 @@
   ; welcome page 
   (GET "/" [] "Welcome to Reuters Goalkeeper API")
 
-  (GET "/comments/:id" [id]
-    (when-let [comment (db/get-by-id db/comments-db id)] 
+  (GET "/goalkeeper/:id" [id]
+    (when-let [comment (db/get-by-id db/goalkeeper-db id)] 
        (->> comment
             vector
-            (db/get-with-replies db/comments-db true 0 ,,,)
+            (db/get-with-replies db/goalkeeper-db true 0 ,,,)
             first
             response)))
 
-  (POST "/comments" [message url tags :as {{user-id :user_id url-title :url_title} :params}]
+  (POST "/goalkeeper" [message url tags :as {{user-id :user_id url-title :url_title} :params}]
     (db/insert db/comments-db { :url url 
                                 :url-title url-title 
                                 :user-id user-id 
@@ -36,21 +36,11 @@
                                 :tags tags })
     (response (str "comment: " url ", " message " - was saved.")))
 
-  (POST "/comments/:id/replies"
-    [id message tags approved :as {{user-id :user_id} :params}]
-      (db/insert db/comments-db { :parent-id id
-                                  :url ""
-                                  :user-id user-id
-                                  :message message
-                                  :tags tags
-                                  :approved (or approved 0) })
-      (response (str "reply to: " id ", " message " - was saved.")))
-
-  (POST "/comments/:comment-id/approve" [comment-id]
+  (POST "/goalkeeper/:comment-id/approve" [comment-id]
     (db/approve db/comments-db comment-id)
     (response (str "comment: " comment-id " was approved.")))
 
-  (POST "/comments/:comment-id/delete" [comment-id]
+  (POST "/goalkeeper/:comment-id/delete" [comment-id]
       (db/soft-delete-comment-and-its-replies db/comments-db comment-id)
       (response (str "comment: " comment-id " was deleted.")))
 
@@ -69,7 +59,6 @@
 (def app 
     (-> (handler/api app-routes)
         (mw/check-permissions)
-        (mw/set-user-id-from-header)
         (mw/log-access)
         (mw/wrap-errors)
         (mw/no-cache)
