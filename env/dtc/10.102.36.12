@@ -1,0 +1,5 @@
+jetty_threads=100
+comments_db_username=mex
+comments_db_password=med0vuHa!
+comments_db_subname=10.102.36.200:23306,10.102.36.201:23306/mediaexpress?failOverReadOnly=true
+gpdb_ws_domain=http://167.216.208.76:23415

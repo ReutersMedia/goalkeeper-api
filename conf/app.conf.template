@@ -1,0 +1,16 @@
+{
+  :jetty {
+    :port ${jetty_port}
+    :threads ${jetty_threads}
+  }
+  :comments_db {
+    :classname   "com.mysql.jdbc.Driver" 
+    :subprotocol "mysql"
+    :user        "${comments_db_username}"
+    :password    "${comments_db_password}"
+    :subname     "//${comments_db_subname}"
+  }
+  :gpdb_ws {
+    :url "${gpdb_ws_domain}"
+  }
+}

@@ -1,0 +1,67 @@
+<configuration debug="false" scan="false"> 
+
+  <property name="LOG_ROOT" value="${APP_HOME:-.}/logs" />
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender"> 
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="everything" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_ROOT}/everything.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>7</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="applog"
+            class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_ROOT}/app/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>60</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="accesslog" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_ROOT}/access/access.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>60</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="errorlog" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_ROOT}/error/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>60</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="ws" level="INFO" additivity="true">
+    <appender-ref ref="applog"/>
+  </logger>
+
+  <logger name="access" level="INFO" additivity="false">
+    <appender-ref ref="accesslog"/>
+  </logger>
+
+  <logger name="error" level="ERROR" additivity="true">
+    <appender-ref ref="errorlog"/>
+  </logger>
+
+  <root level="INFO">
+    <appender-ref ref="everything" />
+  </root>
+</configuration>
