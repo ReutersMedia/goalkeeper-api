@@ -12,7 +12,7 @@
   (get-all-users-wo-excluded [_ exclude-users limit])
   (get-all-users [_ limit])
   (count-played-games [_ to-date])
-  (get-top-predicters [this to-date limit])
+  (get-top-predictors [this from to limit])
   (insert-or-update-user [_ user]))
 
 (defn execute-raw-with-limit [db sql params limit]
@@ -22,10 +22,11 @@
 
 (defrecord GoalKeeperDB [db] IGoalKeeper
   (get-user-games [_ user-id from to]
-    (let [sql (str "   SELECT pg.game_id as id, pg.team0, pg.team1, pg.winner, pg.score, up.prediction "
+    (let [sql (str "   SELECT pg.game_id as id, pg.start_date, pg.team0, pg.team1, pg.winner, pg.score, up.prediction "
                    "     FROM phase_games pg "
                    "LEFT JOIN users_predictions up on up.user_id = ? and up.game_id = pg.game_id "
-                   "    WHERE pg.start_date >= ? && pg.start_date < ?")]
+                   "    WHERE pg.start_date >= ? AND pg.start_date <= ? "
+                   " ORDER BY pg.start_date")]
       (exec-raw db [sql [user-id from to]] :results)))
 
   (update-user-prediction [_ user-id game-id prediction]
@@ -62,22 +63,28 @@
                    "       AND pg.winner IS NOT NULL ")]
       (first (exec-raw db [sql [to-date]] :results))))
 
-  (get-top-predicters [this to-date limit]
-    (let [games (:count (count-played-games this to-date))
-          sql (str "    SELECT up.user_id as id,count(*) as score"
-                   "      FROM phase_games pg "
-                   "INNER JOIN users_predictions up on up.game_id = pg.game_id and up.prediction = pg.winner "
-                   "     WHERE pg.start_date < ? " 
-                   "       AND pg.winner IS NOT NULL "
-                   "  GROUP BY up.user_id "
-                   "  ORDER BY count(*) DESC")
-          top (mapv #(assoc % :score (/ (:score %) games)) 
-                    (execute-raw-with-limit db sql [to-date] limit))
-          new-limit (- limit (count top))]
-      (cond 
-        (= 0 new-limit) top
-        (= limit new-limit) (get-all-users this limit)
-        :else (concat top (get-all-users-wo-excluded this (mapv :user_id top) new-limit)))))
+  (get-top-predictors [this from to limit]
+    (let [games (:count (count-played-games this to))
+          sql (str "    SELECT p.score, u.* "
+                   "      FROM ( "
+                   "                SELECT up.user_id as id,"
+                   "                       cast(sum(if(pg.winner = up.prediction, 1, 0)) as unsigned) as score"
+                   "                  FROM phase_games pg "
+                   "            INNER JOIN users_predictions up on up.game_id = pg.game_id"
+                   "                 WHERE pg.start_date < ? " 
+                   "                   AND pg.winner IS NOT NULL "
+                   "              GROUP BY up.user_id) p "
+                   "INNER JOIN users u on u.id = p.id "
+                   "  ORDER BY p.score DESC,u.last,u.first")
+          top (execute-raw-with-limit db sql [from] limit)
+          new-limit (- limit (count top))
+          all (cond 
+                (= 0 new-limit) top
+                (= limit new-limit) (get-all-users this limit)
+                :else (concat top (get-all-users-wo-excluded this (mapv :id top) new-limit)))]
+      (mapv #(assoc % :games games 
+                      :predictions (get-user-games this (:id %) from to)) 
+            all)))
 
   (insert-or-update-user [_ user]
     (let [{:keys [id first last picture-url country player level]} user

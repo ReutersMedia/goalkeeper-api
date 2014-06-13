@@ -46,6 +46,11 @@
         { :status 500
           :body (str "An error occured: " (.getMessage t))}))))
 
+(defn cors [handler]
+  (fn [request]
+    (let [response (handler request)]
+      (header response "Access-Control-Allow-Origin" "*"))))
+
 (defn no-cache [handler]
   (fn [request]
     (let [response (handler request)]

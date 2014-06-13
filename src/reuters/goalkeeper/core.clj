@@ -19,34 +19,35 @@
   (GET "/" [] "Welcome to Reuters Goalkeeper API")
 
   (GET "/goalkeeper/users/:user-id/games" [user-id from to]
-    (let [user-id (Integer/parseInt user-id)
+    (let [user-id (Long/parseLong user-id)
           from (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") from)
           to (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") to)]
     (response (db/get-user-games db/goalkeeper-db user-id from to))))
 
   (POST "/goalkeeper/users/:user-id/games/:game-id" [user-id game-id prediction]
-    (let [user-id (Integer/parseInt user-id)
+    (let [user-id (Long/parseLong user-id)
           game-id (Integer/parseInt game-id)]
       (db/update-user-prediction db/goalkeeper-db user-id game-id prediction)
       (response (str "user: " user-id " prediction for game: " game-id " - was saved"))))
 
   (GET "/goalkeeper/users/:user-id" [user-id]
-    (when-let [user (db/get-user-by-id db/goalkeeper-db (Integer/parseInt user-id))] 
+    (when-let [user (db/get-user-by-id db/goalkeeper-db (Long/parseLong user-id))] 
       (response user)))
 
-  (POST "/goalkeeper/user/:id" [id first last country player level :as {{ picture-url :picture_url} :params}]
-    (db/insert-or-update-user db/goalkeeper-db { :id (Integer/parseInt id)
+  (POST "/goalkeeper/users/:user-id" [user-id first last country player level :as {{ picture-url :picture_url} :params}]
+    (db/insert-or-update-user db/goalkeeper-db { :id (Long/parseLong user-id)
                                                  :first first
                                                  :last last
                                                  :picture-url picture-url
                                                  :country country
                                                  :player player
                                                  :level (Integer/parseInt level)})
-    (response (str "user: " id ", " first " " last " - was saved.")))
+    (response (str "user: " user-id ", " first " " last " - was saved.")))
 
-  (GET "/goalkeeper/users" [date limit]
-    (let [to-date (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") date)]
-      (response (db/get-top-predicters db/goalkeeper-db to-date (Integer/parseInt limit)))))
+  (GET "/goalkeeper/users" [from to limit]
+    (let [from (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") from)
+          to (.parse (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ssZ") to)]
+      (response (db/get-top-predictors db/goalkeeper-db from to (Integer/parseInt limit)))))
 
   ; keepalive for nagios check
   (GET "/keepalive" [] (if @shutting-down? nil "alive"))
@@ -66,6 +67,7 @@
         (mw/log-access)
         (mw/wrap-errors)
         (mw/no-cache)
+        (mw/cors)
         (json/wrap-json-response)))
 
 (defn init [])
